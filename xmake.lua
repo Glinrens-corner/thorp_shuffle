@@ -10,3 +10,6 @@ target("example")
               "example/*.cpp"   )
     add_includedirs("include")
     add_packages("libsodium")
+    if is_plat("windows")then
+        add_cxxflags("/permissive-","/W4")
+    end
