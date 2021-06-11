@@ -1,6 +1,7 @@
 #include "ThorpShuffler.hpp"
+#include "..\include\ThorpShuffler.hpp"
 
-namespace thorpe {
+namespace thorp {
     ThorpObfuscator::ThorpObfuscator(std::vector<byte_t> passkeys_data, uint64_t max_message, uint64_t npasses)
         :passkeys_data_{ std::move(passkeys_data) }
         , npasses_{ npasses }
@@ -13,6 +14,7 @@ namespace thorpe {
 
     ThorpObfuscator ThorpObfuscator::from_uint64(uint64_t key_number, uint64_t max_message)
     {
+        constexpr uint64_t key_length = randombytes_SEEDBYTES;
         const uint64_t npasses = 8;
         std::array<byte_t, key_length>key{};
         for (auto& elem : key) elem = 0;
@@ -87,11 +89,11 @@ namespace thorpe {
         };
         return message;
     }
-} //thorpe
+} //thorp
 namespace {
     class OptimizedBitGenerator {
     private:
-        using byte_t = thorpe::byte_t;
+        using byte_t = thorp::byte_t;
     public:
         static constexpr  uint64_t hash_size = crypto_generichash_BYTES_MAX;
         static constexpr uint64_t pass_key_size = crypto_generichash_KEYBYTES_MIN;
@@ -102,7 +104,7 @@ namespace {
             uint64_t max_message,
             uint64_t optimization_level
         );
-        thorpe::byte_t generate_bit(uint64_t message, uint64_t iround);
+        thorp::byte_t generate_bit(uint64_t message, uint64_t iround);
         std::pair<uint64_t, uint64_t> opt_pass_parameters(uint64_t iround) const noexcept;
     private:
         byte_t generate_bit_core( uint64_t iopt_round, uint64_t iopt_pass, uint64_t selector);
@@ -129,8 +131,7 @@ namespace {
 
     auto OptimizedBitGenerator::generate_bit(uint64_t message, uint64_t iround)->byte_t
     {
-        // equiv x:= equivalent to x in Fig.6 ;
-#pragma warning disable 65
+        // equiv x   --> equivalent to x in Fig.6 ;
         auto [iopt_pass, iopt_round] = this->opt_pass_parameters(iround); // equiv j,i
         const uint64_t projector = (this->max_message_ /2+1) >> (this->optimization_level_-1);  // equiv N/32
         const uint64_t remainder = (message >> iopt_pass)% projector;          // equiv  a
@@ -151,7 +152,7 @@ namespace {
         return std::pair<uint64_t, uint64_t>(iopt_pass, iopt_round);
     }
 
-    thorpe::byte_t OptimizedBitGenerator::generate_bit_core(uint64_t iopt_pass,uint64_t iopt_round, uint64_t selector)
+    thorp::byte_t OptimizedBitGenerator::generate_bit_core(uint64_t iopt_pass,uint64_t iopt_round, uint64_t selector)
     {
         assert(this->cached_opt_round_ == iopt_round);
         assert(selector < (1ull << (this->optimization_level_ - 1)));
@@ -189,21 +190,25 @@ namespace {
     }
 
 }
-namespace thorpe {
-    OptThorpObfuscator::OptThorpObfuscator(std::vector<byte_t> passkeys_data, 
+namespace thorp {
+
+    OptThorpObfuscator::OptThorpObfuscator(std::vector<byte_t> round_keys_data,
         uint64_t max_message, 
         uint64_t npasses, uint64_t optimization_level)
-        :passkeys_data_{ std::move(passkeys_data) }
+        :round_keys_data_{ std::move(round_keys_data) }
         , npasses_{ npasses }
         , max_message_{ max_message }
         , optimization_level_{optimization_level}{
-
+        assert(this->optimization_level_ > 0);
+        assert(this->optimization_level_ <= this->optimization_level_max);
         const uint64_t nrounds = nrounds_per_pass(max_message) * this->npasses_;
         const uint64_t nroundkeys_bytes_sum = nrounds * crypto_generichash_KEYBYTES_MIN;
-        assert(this->passkeys_data_.size() >= nroundkeys_bytes_sum);
+        assert(this->round_keys_data_.size() >= nroundkeys_bytes_sum);
         assert(this->max_message_ % 2 == 1);// Thorpe can only handle even message_spaces
     }
-    OptThorpObfuscator OptThorpObfuscator::from_uint64(uint64_t key_number, const uint64_t max_message){
+
+    OptThorpObfuscator OptThorpObfuscator::from_uint64(uint64_t key_number, const uint64_t max_message){        
+    const uint64_t  optimization_level = optimization_level_max;
     constexpr uint64_t key_length = randombytes_SEEDBYTES;
     const uint64_t npasses = 8;
     std::array<byte_t, key_length>key{};
@@ -216,10 +221,10 @@ namespace thorpe {
     };
 
 
-    std::vector<byte_t> round_keys_data(round_keys_data_size(npasses, max_message), 0);
+    std::vector<byte_t> round_keys_data(round_keys_data_size(npasses, max_message,optimization_level), 0);
     assert(key.size() >= randombytes_SEEDBYTES); // randombytes_buf_deterministic takes a unsigned char[randombytes_SEEDBYTES]
     randombytes_buf_deterministic(round_keys_data.data(), round_keys_data.size(), key.data());
-    return OptThorpObfuscator{ round_keys_data, max_message,npasses , 7};
+    return OptThorpObfuscator{ round_keys_data, max_message,npasses , optimization_level};
     }
     ;
 
@@ -228,7 +233,7 @@ namespace thorpe {
         uint64_t message = plaintext;
         const uint64_t half_max = this->max_message_ / 2 + 1;
         const uint64_t nrounds = nrounds_per_pass(this->max_message_) * this->npasses_;
-        OptimizedBitGenerator bit_generator(&this->passkeys_data_, this->max_message_, this->optimization_level_);
+        OptimizedBitGenerator bit_generator(&this->round_keys_data_, this->max_message_, this->optimization_level_);
         for (uint64_t iround = 0; iround < nrounds; ++iround) {
             uint64_t leading_bit = message / half_max;
             uint64_t remainder = message % half_max;
@@ -245,7 +250,7 @@ namespace thorpe {
         uint64_t message = cyphertext;
         const uint64_t half_max = this->max_message_ / 2 + 1;
         const uint64_t nrounds = nrounds_per_pass(this->max_message_) * this->npasses_;
-        OptimizedBitGenerator bit_generator(&this->passkeys_data_, this->max_message_, this->optimization_level_);
+        OptimizedBitGenerator bit_generator(&this->round_keys_data_, this->max_message_, this->optimization_level_);
         for (uint64_t iround = 0; iround < nrounds; ++iround) {
             uint64_t trailing_bit = message % 2;
             uint64_t remainder = message /2;
