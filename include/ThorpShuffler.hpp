@@ -15,20 +15,14 @@ namespace thorpe {
 
     constexpr inline uint64_t nrounds_per_pass(uint64_t max_message)noexcept;
 
-   
-
-
-
-
-
-    class ThorpeObfuscator {
+    class ThorpObfuscator {
     private:
        // static constexpr uint64_t half_max = max_message_ / 2+1;
-    public:
+
         static constexpr uint64_t key_length = randombytes_SEEDBYTES;
     public:
-        ThorpeObfuscator(std::vector<byte_t> random_data, uint64_t max_message, uint64_t npasses);
-        static ThorpeObfuscator from_uint64(uint64_t key_number, uint64_t max_message);
+        ThorpObfuscator(std::vector<byte_t> round_keys_data, uint64_t max_message, uint64_t npasses);
+        static ThorpObfuscator from_uint64(uint64_t key_number, uint64_t max_message);
         static constexpr uint64_t round_keys_data_size(uint64_t npasses,uint64_t max_message);
         uint64_t encrypt(uint64_t plaintext)const;
         uint64_t decrypt(uint64_t cyphertext) const;
@@ -37,16 +31,30 @@ namespace thorpe {
         static constexpr std::array<byte_t, sizeof(uint64_t)> generate_message(uint64_t);
         static bool generate_random_bit(uint64_t, const byte_t*, unsigned long long)noexcept;
     private:
-        std::vector<byte_t> random_data_;
+        std::vector<byte_t> passkeys_data_;
         uint64_t npasses_;
         uint64_t max_message_;
     };
 
+    class OptThorpObfuscator {
+
+    public:
+        OptThorpObfuscator(std::vector<byte_t> random_data, uint64_t max_message, uint64_t npasses, uint64_t optimization_lvl);
+        static OptThorpObfuscator from_uint64(uint64_t key_number, uint64_t max_message);
+        static constexpr uint64_t round_keys_data_size(uint64_t npasses, uint64_t max_message);
+        uint64_t encrypt(uint64_t plaintext)const;
+        uint64_t decrypt(uint64_t cyphertext) const;
+    private:
+        std::vector<byte_t> passkeys_data_;
+        uint64_t npasses_;
+        uint64_t max_message_;
+        uint64_t optimization_level_;
     
+    };
 
 
 
-    inline constexpr std::array<byte_t, sizeof(uint64_t)> ThorpeObfuscator::generate_message(uint64_t message)
+    inline constexpr std::array<byte_t, sizeof(uint64_t)> ThorpObfuscator::generate_message(uint64_t message)
     {
         std::array<byte_t, sizeof(uint64_t)>message_out{};
         static_assert(sizeof(uint64_t) == 8, "need 8 byte integers");
@@ -58,14 +66,19 @@ namespace thorpe {
         return message_out;
     }
 
-    inline constexpr uint64_t ThorpeObfuscator::round_keys_data_size(uint64_t npasses, uint64_t max_message)
+    inline constexpr uint64_t ThorpObfuscator::round_keys_data_size(uint64_t npasses, uint64_t max_message)
     {
         const uint64_t nrounds = nrounds_per_pass(max_message) * npasses;
         const uint64_t nroundkeys_bytes_sum = nrounds * crypto_generichash_KEYBYTES_MIN;
         return nroundkeys_bytes_sum;
     }
 
-
+    constexpr uint64_t OptThorpObfuscator::round_keys_data_size(uint64_t npasses, uint64_t max_message)
+    {
+        const uint64_t nrounds = nrounds_per_pass(max_message) * npasses;
+        const uint64_t nroundkeys_bytes_sum = nrounds * crypto_generichash_KEYBYTES_MIN;
+        return nroundkeys_bytes_sum;
+    }
 
     constexpr inline uint64_t nrounds_per_pass(uint64_t max_message)noexcept
     {
