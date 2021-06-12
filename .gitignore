@@ -3,9 +3,10 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
-#xmake config and xmake build dir
+#xmake config, xmake build dir, bin dir
 .xmake
 build
+bin
 
 
 # User-specific files
