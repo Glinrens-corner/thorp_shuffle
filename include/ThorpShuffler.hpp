@@ -114,10 +114,10 @@ namespace thorp{
                     return larger_than ? ibit + 1 : ibit;
                 }
                 else {
-                    assert(false);
+                    //assert(false);
                 };
             };
         };
-        assert(false);
+        //assert(false);
     };
 }
