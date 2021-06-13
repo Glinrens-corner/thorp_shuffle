@@ -43,3 +43,6 @@ target("static_lib")
     if is_plat("windows")then
         add_cxxflags("/permissive-","/W4")
     end
+    on_install(function(package )
+        os.cp("include/*", os.installdir("include"))
+    end)
