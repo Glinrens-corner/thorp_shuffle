@@ -1,6 +1,7 @@
 #include <sodium.h>
 #include <iostream>
 #include "ThorpShuffler.hpp"
+
 int main() {
     if (sodium_init() == -1) {
         return 1;

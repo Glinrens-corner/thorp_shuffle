@@ -1,5 +1,4 @@
 #include "ThorpShuffler.hpp"
-#include "..\include\ThorpShuffler.hpp"
 
 namespace thorp {
     ThorpObfuscator::ThorpObfuscator(std::vector<byte_t> passkeys_data, uint64_t max_message, uint64_t npasses)
