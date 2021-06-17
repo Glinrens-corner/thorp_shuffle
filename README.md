@@ -1,6 +1,6 @@
 # Thorp Shuffle
 
-Here in Glinrens-corner I am dedicated to bringing **you** state of the art technology, today by implementing  the paper of Ben Morris, Phillip Rogaway and Till Stegers "How to Encipher Messages on a Small Domain" from 2007.
+Here in Glinrens-corner I am dedicated to bringing **you** state of the art technology, today by implementing  the paper of Ben Morris, Phillip Rogaway and Till Stegers "How to Encipher Messages on a Small Domain" from 2009 [link](https://doi.org/10.1007/978-3-642-03356-8_17).
 
 In that paper the authors showed that the thorp shuffle can be used to encrypt very short messages(up to some hundreds of bits.)
 In a shuffle every element associates two positions (the position before the shuffle and the position after the shuffle) by interpreting the position before the shuffle as message and the position after the shuffle as encrypted message we can use a shuffle algorithm as encryption algorithm if 
@@ -8,7 +8,7 @@ In a shuffle every element associates two positions (the position before the shu
  * the algorithm can calculate the shuffled position efficiently.
  * the algorithm is cryptographically secure. 
  
-The thorp shuffle naturally fulfills the first two requirements. The mentioned paper show the thrid one. 
+The thorp shuffle naturally fulfills the first two requirements. The mentioned paper show the third one. 
 
 
 ## Thorp as a Shuffle

@@ -1,6 +1,7 @@
 #include "ThorpShuffler.hpp"
 
 namespace thorp {
+
     ThorpObfuscator::ThorpObfuscator(std::vector<byte_t> passkeys_data, uint64_t max_message, uint64_t npasses)
         :passkeys_data_{ std::move(passkeys_data) }
         , npasses_{ npasses }
